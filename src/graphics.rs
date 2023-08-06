@@ -5,9 +5,10 @@ use core::marker::PhantomData;
 use embedded_graphics_core::prelude::*;
 
 /// Display rotation, only 90° increments supported
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum DisplayRotation {
     /// No rotation
+    #[default]
     Rotate0,
     /// Rotate by 90 degrees clockwise
     Rotate90,
@@ -15,12 +16,6 @@ pub enum DisplayRotation {
     Rotate180,
     /// Rotate 270 degrees clockwise
     Rotate270,
-}
-
-impl Default for DisplayRotation {
-    fn default() -> Self {
-        DisplayRotation::Rotate0
-    }
 }
 
 /// count the number of bytes per line knowing that it may contains padding bits
@@ -337,7 +332,7 @@ fn set_pixel<COLOR: ColorType>(
     };
 
     // Out of range check
-    if (x < 0) || (x >= width as i32) || (y < 0) || (y > height as i32) {
+    if (x < 0) || (x >= width as i32) || (y < 0) || (y >= height as i32) {
         // don't do anything in case of out of range
         return;
     }
