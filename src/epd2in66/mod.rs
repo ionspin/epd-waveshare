@@ -191,15 +191,15 @@ pub const DEFAULT_BACKGROUND_COLOR: Color = Color::White;
 
 /// A Display buffer configured with our extent and color depth.
 #[cfg(feature = "graphics")]
-pub type Display2in66b = crate::graphics::Display<
+pub type Display2in66 = crate::graphics::Display<
     WIDTH,
     HEIGHT,
     false,
-    { buffer_len(WIDTH as usize, HEIGHT as usize) * 2 },
+    { buffer_len(WIDTH as usize, HEIGHT as usize) * 1 },
     Color,
 >;
 
-/// The EPD 2in66-B driver.
+/// The EPD 2in66 driver.
 pub struct Epd2in66<SPI, CS, BUSY, DC, RST, DELAY> {
     interface: DisplayInterface<SPI, CS, BUSY, DC, RST, DELAY>,
     background: Color,
@@ -297,12 +297,12 @@ where
         &mut self,
         spi: &mut SPI,
         buffer: &[u8],
-        _delay: &mut DELAY,
+        delay: &mut DELAY,
     ) -> Result<(), SPI::Error> {
         self.set_cursor(spi, 0, 0)?;
-        self.set_cursor(spi, 0, 0)?;
         self.interface.cmd(spi, Command::WriteBlackWhiteRAM)?;
-        self.interface.data(spi, buffer)
+        self.interface.data(spi, buffer)?;
+        self.wait_until_idle(delay)
     }
 
     fn update_partial_frame(
@@ -340,10 +340,11 @@ where
 
     fn clear_frame(&mut self, spi: &mut SPI, delay: &mut DELAY) -> Result<(), SPI::Error> {
         let white = match self.background {
-            Color::Black => { StartWith::One }
-            Color::White => { StartWith::Zero }
+            Color::Black => { StartWith::Zero }
+            Color::White => { StartWith::One }
         };
-        self.black_white_pattern(spi, delay, PatW::W160, PatH::H296, white)
+        self.black_white_pattern(spi, delay, PatW::W160, PatH::H296, white)?;
+        self.wait_until_idle(delay)
     }
 
     fn set_lut(
